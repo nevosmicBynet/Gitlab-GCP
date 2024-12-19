@@ -1,3 +1,14 @@
-.terraform*
-terraform.tfvars
-terraform.*
+# Ignore Terraform directories and related files
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Ignore Terraform override files
+*.tfvars
+*.tfvars.json
+
+# Ignore Terraform lock file
+**/.terraform.lock.hcl
+
+# Ignore Ansible inventory
+ansible/gitlab_install/inventory.ini
