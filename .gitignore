@@ -1,0 +1,4 @@
+.terraform*
+terraform.tfvars
+terraform.*
+GCP/ansible/gitlab_install/inventory.ini
