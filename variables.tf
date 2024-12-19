@@ -2,56 +2,47 @@
 variable "project_id" {
   description = "The GCP project ID where resources will be created"
   type        = string
-  default     = "nimubs-product-testing"
 }
 
 variable "region" {
   description = "The GCP region to create resources"
   type        = string
-  default     = "us-east1"
 }
 
 variable "network_name" {
   description = "The name of the VPC network"
   type        = string
-  default     = "gitlab-vpc"
 }
 
 # Subnet Variables
 variable "subnet_public_name" {
   description = "The name of the public subnet"
   type        = string
-  default     = "gitlab-public-subnet"
 }
 
 variable "subnet_private_name" {
   description = "The name of the private subnet"
   type        = string
-  default     = "gitlab-private-subnet"
 }
 
 variable "subnet_proxy_name" {
   description = "The name of the proxy subnet"
   type        = string
-  default     = "gitlab-proxy-subnet"
 }
 
 variable "subnet_public_cidr" {
   description = "The CIDR range for the public subnet"
   type        = string
-  default     = "10.0.0.0/24"
 }
 
 variable "subnet_private_cidr" {
   description = "The CIDR range for the private subnet"
   type        = string
-  default     = "10.0.1.0/24"
 }
 
 variable "subnet_proxy_cidr" {
   description = "The CIDR range for the proxy subnet"
   type        = string
-  default     = "10.0.2.0/24"
 }
 
 # Proxy Subnet Purpose
