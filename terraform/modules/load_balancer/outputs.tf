@@ -9,3 +9,7 @@ output "forwarding_rule_name" {
   description = "The name of the forwarding rule"
   value       = google_compute_forwarding_rule.this.name
 }
+output "backend_service_ip" {
+  description = "The IP address of the backend service"
+  value       = google_compute_forwarding_rule.this.ip_address
+}

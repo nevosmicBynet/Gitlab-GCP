@@ -60,7 +60,7 @@ resource "google_compute_address" "this" {
 
 # Bastion
 resource "google_compute_instance" "bastion" {
-  name         = "bastion-host"
+  name         = "bynet-gitlab-bastion-host"
   machine_type = var.machine_type
   zone         = var.bastion_zone
 
@@ -79,4 +79,49 @@ resource "google_compute_instance" "bastion" {
     }
   }
 
+  metadata = {
+    ssh-keys = "${var.ssh_username}:${var.ssh_public_key}"
+    startup-script = <<EOT
+      #!/bin/bash
+      set -e
+
+      # Update system packages
+      apt-get update -y
+      apt-get upgrade -y
+
+      # Install required dependencies
+      apt-get install -y software-properties-common
+
+      # Add Ansible PPA and install Ansible
+      apt-add-repository --yes --update ppa:ansible/ansible
+      apt-get install -y ansible
+
+      # Add SSH public key for user
+      mkdir -p /home/${var.ssh_username}/.ssh
+      echo "${var.ssh_public_key}" >> /home/${var.ssh_username}/.ssh/authorized_keys
+      chmod 700 /home/${var.ssh_username}/.ssh
+      chmod 600 /home/${var.ssh_username}/.ssh/authorized_keys
+      chown -R ${var.ssh_username}:${var.ssh_username} /home/${var.ssh_username}/.ssh
+    EOT
+  }
+}
+
+
+
+# Fetch the Instance Group Details
+data "google_compute_region_instance_group" "backend_group" {
+  name   = google_compute_region_instance_group_manager.this.name
+  region = var.region
+}
+
+# Fetch the First Instance Details
+data "google_compute_instance" "backend_instance" {
+  name = element(
+    split("/", data.google_compute_region_instance_group.backend_group.instances[0].instance),
+    length(split("/", data.google_compute_region_instance_group.backend_group.instances[0].instance)) - 1
+  )
+  zone = element(
+    split("/", data.google_compute_region_instance_group.backend_group.instances[0].instance),
+    length(split("/", data.google_compute_region_instance_group.backend_group.instances[0].instance)) - 3
+  )
 }

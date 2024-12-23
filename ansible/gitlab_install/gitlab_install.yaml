@@ -1,6 +1,6 @@
 ---
-- name: Install GitLab via bastion host
-  hosts: bastion
+- name: Download GitLab packages and dependencies on bastion
+  hosts: localhost
   become: yes  # Elevate privileges for tasks in this play
   tasks:
     # Step 1: Update the package cache
@@ -8,7 +8,7 @@
       ansible.builtin.apt:
         update_cache: yes
 
-    # Step 2: Install required tools on the bastion
+    # Step 2: Install required tools
     - name: Install required tools
       ansible.builtin.package:
         name:
@@ -16,6 +16,7 @@
           - wget
           - apt-transport-https
           - gnupg
+          - apt-rdepends
         state: present
 
     # Step 3: Add the GitLab package repository
@@ -31,53 +32,52 @@
         state: directory
         mode: '0755'
 
-    # Step 5: Download GitLab installation script
+    # Step 5: Download GitLab EE package
+    - name: Download GitLab EE package
+      ansible.builtin.shell:
+        cmd: apt-get download gitlab-ee
+        chdir: /tmp/gitlab_packages
+
+    # Step 6: Download GitLab dependencies explicitly
+    - name: Download GitLab dependencies explicitly
+      ansible.builtin.shell:
+        cmd: |
+          apt-get download curl openssh-server ca-certificates tzdata perl libssl-dev libffi-dev zlib1g-dev
+        chdir: /tmp/gitlab_packages
+
+    # Step 7: Verify GitLab packages directory
+    - name: Verify GitLab packages directory exists
+      ansible.builtin.shell:
+        cmd: ls -la /tmp/gitlab_packages
+
+    # Step 8: Verify GitLab installation script exists
     - name: Download GitLab installation script
       ansible.builtin.get_url:
         url: https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.deb.sh
         dest: /tmp/gitlab-install.sh
         mode: '0755'
 
-    # Step 6: Download GitLab EE package
-    - name: Download GitLab EE package
-      ansible.builtin.shell:
-        cmd: apt-get download gitlab-ee
-        chdir: /tmp/gitlab_packages
-
-    # Step 7: Download GitLab dependencies
-    - name: Download GitLab dependencies
-      ansible.builtin.shell:
-        cmd: |
-          apt-get download curl openssh-server ca-certificates tzdata perl
-        chdir: /tmp/gitlab_packages
-
-    # Step 8: Copy packages to the private VM
-    - name: Copy packages to private VM
+    # Step 9: Copy GitLab packages to private VM
+    - name: Copy GitLab packages to private VM
       ansible.builtin.copy:
         src: /tmp/gitlab_packages/
         dest: /tmp/gitlab_packages/
-        remote_src: no
         mode: '0755'
-      delegate_to: "{{ ansible_host }}"
-      vars:
-        ansible_host: "{{ private_vm_ip }}"
+      delegate_to: 10.0.1.2
 
-    # Step 9: Copy GitLab installation script to the private VM
-    - name: Copy GitLab installation script
+    # Step 10: Copy GitLab installation script to private VM
+    - name: Copy GitLab installation script to private VM
       ansible.builtin.copy:
         src: /tmp/gitlab-install.sh
         dest: /tmp/gitlab-install.sh
-        remote_src: no
         mode: '0755'
-      delegate_to: "{{ ansible_host }}"
-      vars:
-        ansible_host: "{{ private_vm_ip }}"
+      delegate_to: 10.0.1.2
 
 - name: Install GitLab on the private VM
-  hosts: private_vm
+  hosts: 10.0.1.2
   become: yes  # Elevate privileges for tasks in this play
   tasks:
-    # Step 10: Install GitLab on private VM
+    # Step 11: Run GitLab installation script
     - name: Run GitLab installation script
       ansible.builtin.shell:
         cmd: |
@@ -85,13 +85,13 @@
           sudo dpkg -i /tmp/gitlab_packages/*.deb || sudo apt-get -f install -y
           sudo EXTERNAL_URL="http://{{ ansible_host }}" gitlab-ctl reconfigure
 
-    # Step 11: Check GitLab status
+    # Step 12: Check GitLab status
     - name: Check GitLab service status
       ansible.builtin.shell:
         cmd: gitlab-ctl status
       register: gitlab_status
 
-    # Step 12: Display GitLab status
+    # Step 13: Display GitLab status
     - name: Display GitLab status
       ansible.builtin.debug:
         msg: "{{ gitlab_status.stdout }}"

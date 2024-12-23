@@ -17,3 +17,13 @@ output "static_ip_address" {
   description = "The static IP address for the load balancer"
   value       = google_compute_address.this.address
 }
+
+output "bastion_ip" {
+  description = "The public IP address of the Bastion host"
+  value       = google_compute_instance.bastion.network_interface[0].access_config[0].nat_ip
+}
+
+output "backend_instance_ip" {
+  description = "The private IP address of the backend instance"
+  value       = data.google_compute_instance.backend_instance.network_interface[0].network_ip
+}
